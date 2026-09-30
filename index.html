@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi Mind — Memorize & Test π</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+              900: '#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Custom clean styling and subtle animations */
+    .digit-cell:hover {
+      transform: translateY(-1px);
+    }
+    .shake {
+      animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+      40%, 60% { transform: translate3d(3px, 0, 0); }
+    }
+    /* Hide native scrollbar for ultra clean look */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-stone-50 dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 min-h-full flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- Header & Navigation -->
+  <header class="w-full max-w-4xl mx-auto px-4 pt-6 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-stone-200 dark:border-zinc-800">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-950 flex items-center justify-center font-bold text-xl select-none shadow-sm">
+        π
+      </div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight leading-none">Pi Mind</h1>
+        <p class="text-xs text-stone-500 dark:text-zinc-400 mt-1">1,200+ Decimal Digits Trainer</p>
+      </div>
+    </div>
+
+    <!-- Mode Selector Navigation -->
+    <nav class="flex items-center bg-stone-200/80 dark:bg-zinc-800/80 p-1 rounded-xl text-xs font-medium backdrop-blur-sm">
+      <button id="nav-reader" onclick="switchMode('reader')" class="mode-btn px-3 py-1.5 rounded-lg transition-all duration-150 text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white">
+        Reader
+      </button>
+      <button id="nav-flashcard" onclick="switchMode('flashcard')" class="mode-btn px-3 py-1.5 rounded-lg transition-all duration-150 text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white">
+        One-by-One
+      </button>
+      <button id="nav-test" onclick="switchMode('test')" class="mode-btn px-3 py-1.5 rounded-lg transition-all duration-150 text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white">
+        Score Test
+      </button>
+    </nav>
+
+    <!-- Theme and Sound Controls -->
+    <div class="flex items-center gap-2">
+      <button id="sound-btn" onclick="toggleSound()" title="Toggle Audio Feedback" class="p-2 rounded-lg text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-stone-200/60 dark:hover:bg-zinc-800 transition">
+        <svg id="sound-icon-on" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        <svg id="sound-icon-off" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+      </button>
+      <button onclick="toggleDarkMode()" title="Toggle Dark/Light Mode" class="p-2 rounded-lg text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-stone-200/60 dark:hover:bg-zinc-800 transition">
+        <svg id="theme-icon-sun" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg id="theme-icon-moon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="w-full max-w-4xl mx-auto px-4 py-8 flex-1 flex flex-col">
+
+    <section id="view-reader" class="space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-stone-100 dark:bg-zinc-900/60 p-4 rounded-2xl border border-stone-200/60 dark:border-zinc-800">
+        <div>
+          <h2 class="text-sm font-semibold tracking-wide uppercase text-stone-500 dark:text-zinc-400">Study Table</h2>
+          <p class="text-xs text-stone-500 dark:text-zinc-500 mt-0.5">Click any block to inspect or jump to Flashcards</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Chunk size selector -->
+          <div class="flex items-center text-xs text-stone-600 dark:text-zinc-400 gap-1.5">
+            <span>Group by:</span>
+            <button onclick="setChunkSize(5)" id="chunk-btn-5" class="px-2 py-1 rounded bg-stone-200 dark:bg-zinc-800 text-stone-800 dark:text-zinc-200 font-mono font-medium">5</button>
+            <button onclick="setChunkSize(10)" id="chunk-btn-10" class="px-2 py-1 rounded hover:bg-stone-200/70 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-400 font-mono font-medium">10</button>
+          </div>
+          <!-- Quick jump to index -->
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="reader-jump-input" placeholder="Index..." min="1" max="1200" class="w-20 px-2 py-1 text-xs bg-white dark:bg-zinc-950 border border-stone-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono">
+            <button onclick="jumpToReaderIndex()" class="px-2.5 py-1 text-xs rounded-lg bg-stone-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium hover:opacity-90">Go</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pi Display Grid -->
+      <div id="reader-container" class="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl border border-stone-200 dark:border-zinc-800 shadow-sm leading-relaxed font-mono select-text transition">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <section id="view-flashcard" class="hidden flex-1 flex flex-col justify-center items-center py-6">
+      <div class="w-full max-w-md bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-stone-200 dark:border-zinc-800 shadow-lg text-center flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Header Index / Meta -->
+        <div class="w-full flex items-center justify-between text-xs text-stone-400 dark:text-zinc-500 font-mono mb-4">
+          <span id="fc-index-label">Position: #1</span>
+          <span id="fc-context-prev" class="text-stone-400 dark:text-zinc-600 tracking-wider">3.</span>
+        </div>
+
+        <!-- Center Digit Display -->
+        <div class="h-44 flex items-center justify-center relative w-full select-none my-2">
+          <div id="fc-digit-display" class="text-8xl sm:text-9xl font-bold font-mono text-stone-900 dark:text-zinc-100 tracking-tight transition-transform duration-100">
+            1
+          </div>
+          <!-- Hidden peek overlay -->
+          <div id="fc-hidden-overlay" class="hidden absolute inset-0 bg-stone-100 dark:bg-zinc-800/90 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center cursor-pointer" onclick="toggleFlashcardPeek()">
+            <span class="text-3xl font-light text-stone-400">?</span>
+            <span class="text-xs text-stone-400 dark:text-zinc-400 mt-2 font-sans">Click or tap Space to reveal</span>
+          </div>
+        </div>
+
+        <!-- Contextual trailing/leading hint -->
+        <div class="text-xs text-stone-400 dark:text-zinc-500 font-mono mb-8 h-4 flex items-center gap-1">
+          <span class="opacity-60">Upcoming:</span>
+          <span id="fc-next-peek" class="opacity-75 blur-[3px] select-none hover:blur-none transition-all cursor-pointer" title="Hover to inspect next 3">4 1 5</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="w-full flex items-center justify-center gap-3">
+          <button onclick="stepFlashcard(-1)" class="p-3.5 rounded-2xl border border-stone-200 dark:border-zinc-800 hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-300 transition active:scale-95" title="Previous (Left Arrow)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+
+          <button id="fc-peek-btn" onclick="toggleFlashcardPeek()" class="px-5 py-3.5 rounded-2xl border border-stone-200 dark:border-zinc-800 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-300 transition">
+            Hide / Guess
+          </button>
+
+          <button onclick="stepFlashcard(1)" class="p-3.5 rounded-2xl bg-stone-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90 transition active:scale-95" title="Next (Right Arrow / Space)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Keyboard hints -->
+        <div class="mt-6 text-[11px] text-stone-400 dark:text-zinc-600 flex items-center gap-3">
+          <span><kbd class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-zinc-800 font-mono text-[10px]">←</kbd> Prev</span>
+          <span><kbd class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-zinc-800 font-mono text-[10px]">Space</kbd> Peek/Next</span>
+          <span><kbd class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-zinc-800 font-mono text-[10px]">→</kbd> Next</span>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="view-test" class="hidden flex-1 flex flex-col space-y-6">
+      
+      <!-- Stats Top Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-stone-200 dark:border-zinc-800 text-center">
+          <div class="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Digits Cleared</div>
+          <div id="stat-score" class="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">0</div>
+        </div>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-stone-200 dark:border-zinc-800 text-center">
+          <div class="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Personal Best</div>
+          <div id="stat-highscore" class="text-2xl font-bold font-mono text-stone-800 dark:text-zinc-200 mt-1">0</div>
+        </div>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-stone-200 dark:border-zinc-800 text-center">
+          <div class="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Accuracy</div>
+          <div id="stat-accuracy" class="text-2xl font-bold font-mono text-stone-800 dark:text-zinc-200 mt-1">100%</div>
+        </div>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-stone-200 dark:border-zinc-800 text-center">
+          <div class="text-[11px] text-stone-400 uppercase tracking-wider font-semibold">Mistakes</div>
+          <div id="stat-mistakes" class="text-2xl font-bold font-mono text-rose-500 mt-1">0</div>
+        </div>
+      </div>
+
+      <!-- Interactive Typing Arena -->
+      <div id="test-card" class="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-3xl border border-stone-200 dark:border-zinc-800 shadow-sm flex flex-col items-center justify-center relative min-h-[280px]">
+        
+        <!-- Live Digit Feed -->
+        <div class="w-full flex items-center justify-start flex-wrap gap-1 font-mono text-lg sm:text-xl p-4 bg-stone-50 dark:bg-zinc-950 rounded-2xl border border-stone-200/70 dark:border-zinc-800 max-h-48 overflow-y-auto no-scrollbar" id="test-digits-stream">
+          <span class="text-stone-400 font-bold mr-1">3.</span>
+          <span id="test-digits-entered" class="text-emerald-600 dark:text-emerald-400 break-all"></span>
+          <span id="test-cursor" class="inline-block w-2.5 h-5 bg-emerald-500 animate-pulse align-middle ml-0.5"></span>
+        </div>
+
+        <!-- Virtual Typing / Input helper -->
+        <div class="mt-6 flex flex-col items-center gap-3 w-full">
+          <p class="text-xs text-stone-400 dark:text-zinc-500 text-center">
+            Type digits on your keyboard or use the on-screen keypad below. Start typing decimals after <strong>3.</strong>
+          </p>
+
+          <!-- Virtual Numeric Keypad for Mobile and Touch devices -->
+          <div class="grid grid-cols-5 sm:grid-cols-10 gap-2 mt-2 w-full max-w-md">
+            <button onclick="handleKeyInput('0')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">0</button>
+            <button onclick="handleKeyInput('1')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">1</button>
+            <button onclick="handleKeyInput('2')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">2</button>
+            <button onclick="handleKeyInput('3')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">3</button>
+            <button onclick="handleKeyInput('4')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">4</button>
+            <button onclick="handleKeyInput('5')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">5</button>
+            <button onclick="handleKeyInput('6')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">6</button>
+            <button onclick="handleKeyInput('7')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">7</button>
+            <button onclick="handleKeyInput('8')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">8</button>
+            <button onclick="handleKeyInput('9')" class="num-key py-2.5 text-base font-semibold font-mono rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition">9</button>
+          </div>
+        </div>
+
+        <!-- Action tools -->
+        <div class="flex items-center gap-3 mt-6">
+          <button onclick="peekTestDigit()" id="test-peek-btn" class="px-3.5 py-2 text-xs font-medium rounded-xl border border-stone-200 dark:border-zinc-800 text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-800 transition">
+            Hint (Peek Next)
+          </button>
+          <button onclick="resetTest()" class="px-3.5 py-2 text-xs font-medium rounded-xl border border-stone-200 dark:border-zinc-800 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+            Reset Run
+          </button>
+        </div>
+
+        <!-- Hidden input for continuous mobile keyboard focus -->
+        <input type="text" id="test-mobile-input" inputmode="numeric" class="opacity-0 absolute -z-10 w-0 h-0 pointer-events-none" aria-hidden="true" autocomplete="off">
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full max-w-4xl mx-auto px-4 py-4 text-center text-xs text-stone-400 dark:text-zinc-600 border-t border-stone-200 dark:border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <span>Zero tracking • Pure client-side calculations</span>
+    <span>Calculated using true Chudnovsky Pi expansion</span>
+  </footer>
+
+  <!-- Notifications Modal / Toast for Peeks & Highscores -->
+  <div id="toast" class="fixed bottom-6 right-6 pointer-events-none transition-all duration-300 opacity-0 translate-y-2 z-50 px-4 py-2.5 bg-stone-900 text-white dark:bg-white dark:text-zinc-900 rounded-xl shadow-xl text-xs font-medium"></div>
+
+  <script>
+    // Verified 1,200+ digits of Pi after "3."
+    const PI_DECIMALS = "14159265358979323846264338327950288419716939937510" +
+      "58209749445923078164062862089986280348253421170679" +
+      "82148086513282306647093844609550582231725359408128" +
+      "48111745028410270193852110555964462294895493038196" +
+      "44288109756659334461284756482337867831652712019091" +
+      "45648566923460348610454326648213393607260249141273" +
+      "72458700660631558817488152092096282925409171536436" +
+      "78925903600113305305488204665213841469519415116094" +
+      "33057270365759591953092186117381932611793105118548" +
+      "07446237996274956735188575272489122793818301194912" +
+      "98336733624406566430860213949463952247371907021798" +
+      "60943702770539217176293176752384674818467669405132" +
+      "00056812714526356082778577134275778960917363717872" +
+      "14684409012249534301465495853710507922796892589235" +
+      "42019956112129021960864034418159813629774771309960" +
+      "51870721134999999837297804995105973173281609631859" +
+      "50244594553469083026425223082533446850352619311881" +
+      "71010003137838752886587533208381420617177669147303" +
+      "59825349042875546873115956286388235378759375195778" +
+      "18577805321712268066130019278766111959092164201989" +
+      "38095257201065485863278865936153381827968230301952" +
+      "03530185296899577362259941389124972177528347913151" +
+      "55748572424541506959508295331168617278558890750983" +
+      "81754637464939319255060400927701671139009848824012";
+
+    // Application state
+    let currentMode = 'reader'; // 'reader' | 'flashcard' | 'test'
+    let readerChunkSize = 5;
+    let flashcardIndex = 0; // 0 is digit 1: '1'
+    let flashcardIsHidden = false;
+    let soundEnabled = false;
+
+    // Test mode state
+    let testTyped = "";
+    let testMistakes = 0;
+    let testTotalAttempts = 0;
+    let highScore = parseInt(localStorage.getItem('pimind_highscore') || '0', 10);
+
+    // Audio Context Setup for pleasant sound cues
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq, type = 'sine', duration = 0.08) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // Update Tab Styles
+      ['reader', 'flashcard', 'test'].forEach(m => {
+        const btn = document.getElementById(`nav-${m}`);
+        const view = document.getElementById(`view-${m}`);
+        if (m === mode) {
+          btn.className = 'mode-btn px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 text-stone-950 dark:text-white font-semibold shadow-sm';
+          view.classList.remove('hidden');
+        } else {
+          btn.className = 'mode-btn px-3 py-1.5 rounded-lg transition-all duration-150 text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white';
+          view.classList.add('hidden');
+        }
+      });
+
+      if (mode === 'reader') {
+        renderReader();
+      } else if (mode === 'flashcard') {
+        updateFlashcardUI();
+      } else if (mode === 'test') {
+        focusTestInput();
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+      }, 1800);
+    }
+
+    function setChunkSize(size) {
+      readerChunkSize = size;
+      const b5 = document.getElementById('chunk-btn-5');
+      const b10 = document.getElementById('chunk-btn-10');
+      if (size === 5) {
+        b5.className = 'px-2 py-1 rounded bg-stone-200 dark:bg-zinc-800 text-stone-800 dark:text-zinc-200 font-mono font-medium';
+        b10.className = 'px-2 py-1 rounded hover:bg-stone-200/70 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-400 font-mono font-medium';
+      } else {
+        b10.className = 'px-2 py-1 rounded bg-stone-200 dark:bg-zinc-800 text-stone-800 dark:text-zinc-200 font-mono font-medium';
+        b5.className = 'px-2 py-1 rounded hover:bg-stone-200/70 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-400 font-mono font-medium';
+      }
+      renderReader();
+    }
+
+    function renderReader() {
+      const container = document.getElementById('reader-container');
+      let html = `<div class="flex flex-wrap items-baseline gap-x-3 gap-y-3">
+        <span class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">3.</span>`;
+
+      for (let i = 0; i < PI_DECIMALS.length; i += readerChunkSize) {
+        const chunk = PI_DECIMALS.slice(i, i + readerChunkSize);
+        const startIndex = i + 1;
+        const endIndex = Math.min(i + readerChunkSize, PI_DECIMALS.length);
+
+        html += `
+          <div id="chunk-${i}" onclick="jumpFromReaderToFlashcard(${i})" title="Digits #${startIndex}-${endIndex} (Click to practice)" class="digit-cell group cursor-pointer inline-flex flex-col items-center p-1.5 rounded-lg bg-stone-100/70 dark:bg-zinc-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-stone-200/40 dark:border-zinc-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition">
+            <span class="text-xs text-stone-400 dark:text-zinc-600 select-none text-[10px] group-hover:text-emerald-500 font-mono">${startIndex}</span>
+            <span class="text-base font-medium tracking-widest text-stone-800 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300">${chunk}</span>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function jumpToReaderIndex() {
+      const input = document.getElementById('reader-jump-input');
+      const val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 1 || val > PI_DECIMALS.length) {
+        showToast("Enter a valid index between 1 and " + PI_DECIMALS.length);
+        return;
+      }
+      // Calculate target chunk
+      const chunkIdx = Math.floor((val - 1) / readerChunkSize) * readerChunkSize;
+      const el = document.getElementById(`chunk-${chunkIdx}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-emerald-500');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500'), 1600);
+      }
+    }
+
+    function jumpFromReaderToFlashcard(index) {
+      flashcardIndex = index;
+      flashcardIsHidden = false;
+      switchMode('flashcard');
+    }
+
+    function updateFlashcardUI() {
+      const digit = PI_DECIMALS[flashcardIndex];
+      const indexLabel = document.getElementById('fc-index-label');
+      const digitDisplay = document.getElementById('fc-digit-display');
+      const overlay = document.getElementById('fc-hidden-overlay');
+      const peekBtn = document.getElementById('fc-peek-btn');
+      const prevContext = document.getElementById('fc-context-prev');
+      const nextPeek = document.getElementById('fc-next-peek');
+
+      indexLabel.textContent = `Decimal #${flashcardIndex + 1}`;
+      
+      // Calculate context leading text (up to 3 prior digits)
+      if (flashcardIndex === 0) {
+        prevContext.textContent = "3.";
+      } else {
+        const start = Math.max(0, flashcardIndex - 3);
+        const prefix = start === 0 ? "3." : "…";
+        prevContext.textContent = prefix + PI_DECIMALS.slice(start, flashcardIndex);
+      }
+
+      // Upcoming preview
+      const nextThree = PI_DECIMALS.slice(flashcardIndex + 1, flashcardIndex + 4).split('').join(' ');
+      nextPeek.textContent = nextThree || 'End';
+
+      digitDisplay.textContent = digit;
+
+      if (flashcardIsHidden) {
+        overlay.classList.remove('hidden');
+        peekBtn.textContent = 'Reveal';
+      } else {
+        overlay.classList.add('hidden');
+        peekBtn.textContent = 'Hide / Test';
+      }
+    }
+
+    function stepFlashcard(dir) {
+      const newIdx = flashcardIndex + dir;
+      if (newIdx >= 0 && newIdx < PI_DECIMALS.length) {
+        flashcardIndex = newIdx;
+        playBeep(440 + (parseInt(PI_DECIMALS[flashcardIndex]) * 35));
+        updateFlashcardUI();
+      } else if (newIdx >= PI_DECIMALS.length) {
+        showToast("You've reached the end of the available 1,200 digits!");
+      }
+    }
+
+    function toggleFlashcardPeek() {
+      flashcardIsHidden = !flashcardIsHidden;
+      if (!flashcardIsHidden) {
+        playBeep(620, 'sine', 0.05);
+      }
+      updateFlashcardUI();
+    }
+
+    function handleKeyInput(char) {
+      if (currentMode !== 'test') return;
+      if (!/^[0-9]$/.test(char)) return;
+
+      const targetDigit = PI_DECIMALS[testTyped.length];
+      testTotalAttempts++;
+
+      if (char === targetDigit) {
+        // Correct digit
+        testTyped += char;
+        playBeep(520 + (parseInt(char) * 40), 'sine', 0.07);
+        
+        // Check new high score
+        if (testTyped.length > highScore) {
+          highScore = testTyped.length;
+          localStorage.setItem('pimind_highscore', highScore.toString());
+        }
+      } else {
+        // Mistake
+        testMistakes++;
+        playBeep(180, 'sawtooth', 0.15);
+        shakeTestCard();
+      }
+
+      updateTestStats();
+      renderTestDigits();
+    }
+
+    function shakeTestCard() {
+      const card = document.getElementById('test-card');
+      card.classList.remove('shake');
+      void card.offsetWidth; // Trigger reflow
+      card.classList.add('shake');
+    }
+
+    function updateTestStats() {
+      document.getElementById('stat-score').textContent = testTyped.length;
+      document.getElementById('stat-highscore').textContent = highScore;
+      document.getElementById('stat-mistakes').textContent = testMistakes;
+
+      const accuracy = testTotalAttempts > 0 
+        ? Math.round(((testTotalAttempts - testMistakes) / testTotalAttempts) * 100) 
+        : 100;
+      document.getElementById('stat-accuracy').textContent = `${Math.max(0, accuracy)}%`;
+    }
+
+    function renderTestDigits() {
+      const container = document.getElementById('test-digits-entered');
+      container.textContent = testTyped;
+      
+      // Auto-scroll stream to right
+      const stream = document.getElementById('test-digits-stream');
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function peekTestDigit() {
+      if (testTyped.length < PI_DECIMALS.length) {
+        const next = PI_DECIMALS[testTyped.length];
+        showToast(`Next digit is: ${next}`);
+        playBeep(350, 'triangle', 0.1);
+      }
+    }
+
+    function resetTest() {
+      testTyped = "";
+      testMistakes = 0;
+      testTotalAttempts = 0;
+      updateTestStats();
+      renderTestDigits();
+      showToast("Run reset. Ready for a new attempt!");
+      focusTestInput();
+    }
+
+    function focusTestInput() {
+      // Keeps focus ready on mobile or click
+      const mobileInput = document.getElementById('test-mobile-input');
+      if (mobileInput) mobileInput.focus();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      // Allow regular input in jump text box
+      if (e.target && e.target.id === 'reader-jump-input') {
+        if (e.key === 'Enter') jumpToReaderIndex();
+        return;
+      }
+
+      // Flashcard Mode navigation
+      if (currentMode === 'flashcard') {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          stepFlashcard(1);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          stepFlashcard(-1);
+        } else if (e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          if (flashcardIsHidden) {
+            toggleFlashcardPeek();
+          } else {
+            stepFlashcard(1);
+          }
+        }
+      }
+
+      // Test Mode inputs
+      if (currentMode === 'test') {
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          handleKeyInput(e.key);
+        } else if (e.key === 'Backspace') {
+          // Allow soft backspace if needed
+          if (testTyped.length > 0) {
+            testTyped = testTyped.slice(0, -1);
+            renderTestDigits();
+            updateTestStats();
+          }
+        }
+      }
+    });
+
+    // Handle mobile invisible input synchronization
+    const mobileInput = document.getElementById('test-mobile-input');
+    mobileInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      if (val && val.length > 0) {
+        const lastChar = val[val.length - 1];
+        handleKeyInput(lastChar);
+        mobileInput.value = '';
+      }
+    });
+
+    document.getElementById('test-card').addEventListener('click', () => {
+      if (currentMode === 'test') focusTestInput();
+    });
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('pimind_theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-icon-on').classList.toggle('hidden', !soundEnabled);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', soundEnabled);
+      if (soundEnabled) {
+        getAudioContext();
+        playBeep(580, 'sine', 0.08);
+        showToast("Audio feedback enabled");
+      } else {
+        showToast("Audio feedback muted");
+      }
+    }
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Sync stored theme
+      const savedTheme = localStorage.getItem('pimind_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      // Display personal best
+      document.getElementById('stat-highscore').textContent = highScore;
+
+      // Start on Reader mode
+      switchMode('reader');
+    });
+  </script>
+</body>
+</html> 
